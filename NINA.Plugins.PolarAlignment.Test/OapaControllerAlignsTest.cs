@@ -415,9 +415,11 @@ namespace NINA.Plugins.PolarAlignment.Test {
         }
 
         [Test]
-        public void TppasOwnBacklashAndAutomatedAdjustments_AreShownForUpasOnly() {
+        public void TppasOwnBacklashAndAutomatedAdjustments_AreNotShownForOapa() {
             // For OAPA the controller runs the alignment and compensates its own backlash: the
             // shared rows would show the OAPA play in "steps" and a switch that does nothing.
+            // The backlash in steps is UPAS-only; TPPA's automated adjustments also drive the
+            // ASCOM system (UsesTppaAdjustments = UPAS or ASCOM), which has its backlash in arcminutes.
             var dir = new System.IO.DirectoryInfo(AppContext.BaseDirectory);
             while (dir != null && !System.IO.File.Exists(System.IO.Path.Combine(dir.FullName, "PolarAlignment", "Options.xaml"))) {
                 dir = dir.Parent;
@@ -429,7 +431,9 @@ namespace NINA.Plugins.PolarAlignment.Test {
 
             rows.Should().Contain("Azimuth backlash compensation").And.Contain("Do automated adjustments?");
             rows.Should().NotContain("Binding IsSystemSelected");
-            System.Text.RegularExpressions.Regex.Matches(rows, @"Visibility=""\{Binding IsUPASSelected").Count.Should().Be(5);
+            System.Text.RegularExpressions.Regex.Matches(rows, @"Visibility=""\{Binding IsUPASSelected").Count.Should().Be(2);
+            System.Text.RegularExpressions.Regex.Matches(rows, @"Visibility=""\{Binding UsesTppaAdjustments").Count.Should().Be(3);
+            rows.Should().NotContain("IsOAPASelected");
         }
 
         [Test]

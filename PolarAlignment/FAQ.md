@@ -131,7 +131,9 @@ Disable this if you want the mount to continue tracking after TPPA finishes.
 When enabled, TPPA pauses itself after each continuous correction update.
 
 **Polar Alignment System**  
-Selects which supported adjustment system TPPA exposes during the correction phase: `None`, `UPAS`, or `OAPA`.
+Selects which supported adjustment system TPPA exposes during the correction phase: `None`, `UPAS`, `OAPA`, or `ASCOM`.
+
+`ASCOM` uses the azimuth and altitude adjusters of the mount connected in N.I.N.A. Its ASCOM or Alpaca driver must implement the PolarAlign actions (it lists `PolarAlign:Info` in `SupportedActions`); the spec is at https://wiki.openastrotech.com/en/Development/pa-actions. Connect the mount first. All moves and positions are in arcminutes of polar axis movement, so there is no gear ratio or speed to set; backlash is set per axis in arcminutes and is only applied when the device does not handle its own.
 
 **Reverse Azimuth Axis?**  
 Reverses azimuth movement commands sent to the selected adjustment system.

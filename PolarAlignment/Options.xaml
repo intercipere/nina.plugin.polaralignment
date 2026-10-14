@@ -2,6 +2,7 @@
     x:Class="NINA.Plugins.PolarAlignment.Options"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ascom="clr-namespace:NINA.Plugins.PolarAlignment.Ascom"
     xmlns:avalon="clr-namespace:NINA.Plugins.PolarAlignment.Avalon"
     xmlns:behavior="clr-namespace:NINA.WPF.Base.Behaviors;assembly=NINA.WPF.Base"
     xmlns:converters="clr-namespace:NINA.Plugins.PolarAlignment.Converters"
@@ -37,7 +38,11 @@
     <s:String x:Key="UseContinuousErrorEstimatorToolTip">When enabled, TPPA uses the experimental time-aware continuous estimator for live correction error. When disabled, TPPA uses the legacy image-plane calculation.</s:String>
     <s:String x:Key="StopTrackingWhenDoneToolTip">When enabled, TPPA turns sidereal tracking off in its cleanup path after the run ends.</s:String>
     <s:String x:Key="AutoPauseToolTip">When enabled, TPPA pauses itself after each continuous-correction update.</s:String>
-    <s:String x:Key="PolarAlignmentSystemToolTip">Selects which hardware adjustment system TPPA exposes as the active alignment system: None, UPAS, or OAPA.</s:String>
+    <s:String x:Key="PolarAlignmentSystemToolTip">Selects which hardware adjustment system TPPA exposes as the active alignment system: None, UPAS, OAPA, or ASCOM (the connected mount's own adjusters, through the PolarAlign actions).</s:String>
+    <s:String x:Key="AscomSystemToolTip">Drives the azimuth and altitude adjusters of the mount connected in N.I.N.A. through the PolarAlign actions of its ASCOM or Alpaca driver. No extra connection: the mount must be connected and its driver must list PolarAlign:Info in its SupportedActions. All moves are in arcminutes.</s:String>
+    <s:String x:Key="AscomConnectToolTip">Reads PolarAlign:Info from the connected mount and starts status polling.</s:String>
+    <s:String x:Key="AscomBacklashToolTip">Backlash of this axis in arcminutes. TPPA clears it after direction changes, unless the device reports that it handles its own backlash.</s:String>
+    <s:String x:Key="AscomStopToolTip">Stops the azimuth and altitude adjusters. Tracking is not affected.</s:String>
     <s:String x:Key="ReverseAzimuthToolTip">Negates azimuth-axis nudge and move commands sent through the selected hardware system.</s:String>
     <s:String x:Key="ReverseAltitudeToolTip">Negates altitude-axis nudge and move commands sent through the selected hardware system.</s:String>
     <s:String x:Key="AzimuthBacklashCompensationToolTip">If non-zero and the azimuth movement direction changes, TPPA sends an extra negative-then-positive relative X move of this size after the main move.</s:String>
@@ -57,6 +62,7 @@
                 <Grid Margin="0,5,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
@@ -401,6 +407,7 @@
                                     <local:PolarAlignmentSystemType>None</local:PolarAlignmentSystemType>
                                     <local:PolarAlignmentSystemType>UPAS</local:PolarAlignmentSystemType>
                                     <local:PolarAlignmentSystemType>OAPA</local:PolarAlignmentSystemType>
+                                    <local:PolarAlignmentSystemType>ASCOM</local:PolarAlignmentSystemType>
                                 </x:Array>
                             </ComboBox.ItemsSource>
                         </ComboBox>
@@ -465,7 +472,7 @@
                             VerticalAlignment="Center"
                             Text="Do automated adjustments?"
                             ToolTip="{StaticResource AutomatedAdjustmentsToolTip}"
-                            Visibility="{Binding IsUPASSelected, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            Visibility="{Binding UsesTppaAdjustments, Converter={StaticResource BooleanToVisibilityConverter}}" />
                         <StackPanel
                             Grid.Row="22"
                             Grid.Column="1"
@@ -477,8 +484,8 @@
                                 VerticalAlignment="Center"
                                 IsChecked="{Binding ActiveSystem.DoAutomatedAdjustments}"
                                 ToolTip="{StaticResource AutomatedAdjustmentsToolTip}"
-                                Visibility="{Binding IsUPASSelected, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                            <Grid Visibility="{Binding IsUPASSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                Visibility="{Binding UsesTppaAdjustments, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <Grid Visibility="{Binding UsesTppaAdjustments, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <TextBlock
                                     Margin="5,5,0,0"
                                     VerticalAlignment="Center"
@@ -512,7 +519,7 @@
                         <Grid
                             Grid.Row="24"
                             Grid.ColumnSpan="2"
-                            Visibility="{Binding IsSystemSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            Visibility="{Binding IsUPASSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock
                                 Margin="0,5,0,0"
                                 FontStyle="Italic"
@@ -590,6 +597,83 @@
                                 </Button>
                             </Grid>
                             <ContentPresenter Grid.Row="1" Content="{Binding UniversalPolarAlignmentOAPAVM}" />
+                        </Grid>
+                    </GroupBox>
+                    <GroupBox
+                        Grid.Row="3"
+                        Margin="0,10,0,0"
+                        Header="Mount adjusters (PolarAlign actions over ASCOM)"
+                        ToolTip="{StaticResource AscomSystemToolTip}"
+                        Visibility="{Binding IsASCOMSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid Margin="0,10,0,0" DataContext="{Binding AscomPolarAlignmentVM}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <Grid Grid.ColumnSpan="2">
+                                <Button
+                                    Command="{Binding ConnectCommand}"
+                                    ToolTip="{StaticResource AscomConnectToolTip}"
+                                    Visibility="{Binding Connected, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                                    Test Connect
+                                </Button>
+                                <Button
+                                    Command="{Binding DisconnectCommand}"
+                                    ToolTip="{StaticResource AlignmentSystemDisconnectToolTip}"
+                                    Visibility="{Binding Connected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    Disconnect
+                                </Button>
+                            </Grid>
+                            <TextBlock
+                                Grid.Row="1"
+                                Grid.ColumnSpan="2"
+                                Margin="0,5,0,0"
+                                Text="{Binding DeviceDescription}"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                Grid.Row="2"
+                                Margin="0,5,0,0"
+                                VerticalAlignment="Center"
+                                Text="Azimuth backlash"
+                                ToolTip="{StaticResource AscomBacklashToolTip}" />
+                            <ninactrl:UnitTextBox
+                                Grid.Row="2"
+                                Grid.Column="1"
+                                MinWidth="80"
+                                Margin="5,5,0,0"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                Text="{Binding XBacklashCompensation}"
+                                ToolTip="{StaticResource AscomBacklashToolTip}"
+                                Unit="arcmin" />
+                            <TextBlock
+                                Grid.Row="3"
+                                Margin="0,5,0,0"
+                                VerticalAlignment="Center"
+                                Text="Altitude backlash"
+                                ToolTip="{StaticResource AscomBacklashToolTip}" />
+                            <ninactrl:UnitTextBox
+                                Grid.Row="3"
+                                Grid.Column="1"
+                                MinWidth="80"
+                                Margin="5,5,0,0"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                Text="{Binding YBacklashCompensation}"
+                                ToolTip="{StaticResource AscomBacklashToolTip}"
+                                Unit="arcmin" />
+                            <ContentPresenter
+                                Grid.Row="4"
+                                Grid.ColumnSpan="2"
+                                Margin="0,5,0,0"
+                                Content="{Binding}" />
                         </Grid>
                     </GroupBox>
 
@@ -1973,6 +2057,16 @@
                     </Grid>
                 </Grid>
             </GroupBox>
+            <GroupBox
+                Grid.Row="4"
+                Grid.ColumnSpan="3"
+                HorizontalAlignment="Stretch"
+                Visibility="{Binding AscomPolarAlignmentVM.Connected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <GroupBox.Header>
+                    <TextBlock Text="Mount adjusters (PolarAlign actions)" />
+                </GroupBox.Header>
+                <ContentPresenter Content="{Binding AscomPolarAlignmentVM}" />
+            </GroupBox>
         </Grid>
     </DataTemplate>
 
@@ -2272,5 +2366,144 @@
 
     <DataTemplate DataType="{x:Type oapa:UniversalPolarAlignmentOAPAVM}">
         <oapa:OAPAControlPanel />
+    </DataTemplate>
+
+    <!--  Mount adjusters through the PolarAlign actions: positions and nudges in arcminutes of polar axis movement.  -->
+    <DataTemplate DataType="{x:Type ascom:AscomPolarAlignmentVM}">
+        <Grid Visibility="{Binding Connected, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid.Resources>
+                <s:Single x:Key="AscomNegativeTen">-10</s:Single>
+                <s:Single x:Key="AscomNegativeOne">-1</s:Single>
+                <s:Single x:Key="AscomNegativeDotOne">-0.1</s:Single>
+                <s:Single x:Key="AscomDotOne">0.1</s:Single>
+                <s:Single x:Key="AscomOne">1</s:Single>
+                <s:Single x:Key="AscomTen">10</s:Single>
+            </Grid.Resources>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <GroupBox Header="Azimuth (arcmin)" Visibility="{Binding HasAzimuth, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel>
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        FontSize="24"
+                        Text="{Binding PositionX, StringFormat=N2}" />
+                    <UniformGrid Columns="6" Visibility="{Binding DoAutomatedAdjustments, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                        <Button
+                            Height="25"
+                            Margin="1"
+                            Command="{Binding NudgeXCommand}"
+                            CommandParameter="{StaticResource AscomNegativeTen}">
+                            -10
+                        </Button>
+                        <Button
+                            Height="25"
+                            Margin="1"
+                            Command="{Binding NudgeXCommand}"
+                            CommandParameter="{StaticResource AscomNegativeOne}">
+                            -1
+                        </Button>
+                        <Button
+                            Height="25"
+                            Margin="1"
+                            Command="{Binding NudgeXCommand}"
+                            CommandParameter="{StaticResource AscomNegativeDotOne}">
+                            -0.1
+                        </Button>
+                        <Button
+                            Height="25"
+                            Margin="1"
+                            Command="{Binding NudgeXCommand}"
+                            CommandParameter="{StaticResource AscomDotOne}">
+                            +0.1
+                        </Button>
+                        <Button
+                            Height="25"
+                            Margin="1"
+                            Command="{Binding NudgeXCommand}"
+                            CommandParameter="{StaticResource AscomOne}">
+                            +1
+                        </Button>
+                        <Button
+                            Height="25"
+                            Margin="1"
+                            Command="{Binding NudgeXCommand}"
+                            CommandParameter="{StaticResource AscomTen}">
+                            +10
+                        </Button>
+                    </UniformGrid>
+                </StackPanel>
+            </GroupBox>
+            <GroupBox
+                Grid.Column="1"
+                Header="Altitude (arcmin)"
+                Visibility="{Binding HasAltitude, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel>
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        FontSize="24"
+                        Text="{Binding PositionY, StringFormat=N2}" />
+                    <UniformGrid Columns="6" Visibility="{Binding DoAutomatedAdjustments, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                        <Button
+                            Height="25"
+                            Margin="1"
+                            Command="{Binding NudgeYCommand}"
+                            CommandParameter="{StaticResource AscomNegativeTen}">
+                            -10
+                        </Button>
+                        <Button
+                            Height="25"
+                            Margin="1"
+                            Command="{Binding NudgeYCommand}"
+                            CommandParameter="{StaticResource AscomNegativeOne}">
+                            -1
+                        </Button>
+                        <Button
+                            Height="25"
+                            Margin="1"
+                            Command="{Binding NudgeYCommand}"
+                            CommandParameter="{StaticResource AscomNegativeDotOne}">
+                            -0.1
+                        </Button>
+                        <Button
+                            Height="25"
+                            Margin="1"
+                            Command="{Binding NudgeYCommand}"
+                            CommandParameter="{StaticResource AscomDotOne}">
+                            +0.1
+                        </Button>
+                        <Button
+                            Height="25"
+                            Margin="1"
+                            Command="{Binding NudgeYCommand}"
+                            CommandParameter="{StaticResource AscomOne}">
+                            +1
+                        </Button>
+                        <Button
+                            Height="25"
+                            Margin="1"
+                            Command="{Binding NudgeYCommand}"
+                            CommandParameter="{StaticResource AscomTen}">
+                            +10
+                        </Button>
+                    </UniformGrid>
+                </StackPanel>
+            </GroupBox>
+            <Button
+                Grid.Row="1"
+                Grid.ColumnSpan="2"
+                Height="25"
+                Margin="0,5,0,0"
+                Command="{Binding StopCommand}"
+                ToolTip="{StaticResource AscomStopToolTip}"
+                Visibility="{Binding CanStop, Converter={StaticResource BooleanToVisibilityConverter}}">
+                STOP
+            </Button>
+        </Grid>
     </DataTemplate>
 </ResourceDictionary>

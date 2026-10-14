@@ -6,7 +6,9 @@ namespace NINA.Plugins.PolarAlignment {
     public enum PolarAlignmentSystemType {
         None,
         UPAS,
-        OAPA
+        OAPA,
+        /// <summary>The mount's own adjusters, through the PolarAlign actions over its ASCOM/Alpaca connection.</summary>
+        ASCOM
     }
 
     public enum Axis {

@@ -13,6 +13,7 @@ using NINA.Core.MyMessageBox;
 using NINA.Core.Utility;
 using NINA.Plugin;
 using NINA.Plugin.Interfaces;
+using NINA.Plugins.PolarAlignment.Ascom;
 using NINA.Plugins.PolarAlignment.Avalon;
 using NINA.Plugins.PolarAlignment.OAPA;
 using NINA.Profile;
@@ -25,11 +26,13 @@ namespace NINA.Plugins.PolarAlignment {
     public class PolarAlignmentPlugin : PluginBase, INotifyPropertyChanged {
         public static UniversalPolarAlignmentVM UniversalPolarAlignmentVM { get; private set; }
         public static UniversalPolarAlignmentOAPAVM UniversalPolarAlignmentOAPAVM { get; private set; }
+        public static AscomPolarAlignmentVM AscomPolarAlignmentVM { get; private set; }
 
         public static IPolarAlignmentSystemVM ActiveAlignmentSystemVM =>
             Properties.Settings.Default.SelectedPolarAlignmentSystem switch {
                 "UPAS" => UniversalPolarAlignmentVM,
                 "OAPA" => UniversalPolarAlignmentOAPAVM,
+                "ASCOM" => AscomPolarAlignmentVM,
                 _ => null
             };
 
@@ -45,6 +48,8 @@ namespace NINA.Plugins.PolarAlignment {
                 RaisePropertyChanged(nameof(IsSystemSelected));
                 RaisePropertyChanged(nameof(IsUPASSelected));
                 RaisePropertyChanged(nameof(IsOAPASelected));
+                RaisePropertyChanged(nameof(IsASCOMSelected));
+                RaisePropertyChanged(nameof(UsesTppaAdjustments));
                 RaisePropertyChanged(nameof(ActiveSystem));
             }
         }
@@ -52,6 +57,10 @@ namespace NINA.Plugins.PolarAlignment {
         public bool IsSystemSelected => SelectedPolarAlignmentSystem != PolarAlignmentSystemType.None;
         public bool IsUPASSelected => SelectedPolarAlignmentSystem == PolarAlignmentSystemType.UPAS;
         public bool IsOAPASelected => SelectedPolarAlignmentSystem == PolarAlignmentSystemType.OAPA;
+        public bool IsASCOMSelected => SelectedPolarAlignmentSystem == PolarAlignmentSystemType.ASCOM;
+
+        /// <summary>Systems whose moves TPPA's own correction loop decides (OAPA runs its own loop).</summary>
+        public bool UsesTppaAdjustments => IsUPASSelected || IsASCOMSelected;
 
         /// <summary>Instance wrapper for XAML binding with PropertyChanged support.</summary>
         public IPolarAlignmentSystemVM ActiveSystem => ActiveAlignmentSystemVM;
@@ -75,6 +84,7 @@ namespace NINA.Plugins.PolarAlignment {
             UniversalPolarAlignmentVM = new UniversalPolarAlignmentVM(profileService);
             UniversalPolarAlignmentOAPAVM = new UniversalPolarAlignmentOAPAVM(
                 profileService, imagingMediator, telescopeMediator, plateSolverFactory, messageBroker);
+            AscomPolarAlignmentVM = new AscomPolarAlignmentVM(profileService, telescopeMediator);
             PluginId = this.Identifier;
         }
 
@@ -88,6 +98,7 @@ namespace NINA.Plugins.PolarAlignment {
                     RaisePropertyChanged(null);
                     UniversalPolarAlignmentVM.RaiseAllPropertiesChanged();
                     UniversalPolarAlignmentOAPAVM.RaiseAllPropertiesChanged();
+                    AscomPolarAlignmentVM.RaiseAllPropertiesChanged();
                 }
             } catch(Exception ex) {
                 Logger.Error(ex);

@@ -802,5 +802,77 @@ namespace NINA.Plugins.PolarAlignment.Properties {
                 this["OAPABacklashPairSchema"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AscomDoAutomatedAdjustments {
+            get {
+                return ((bool)(this["AscomDoAutomatedAdjustments"]));
+            }
+            set {
+                this["AscomDoAutomatedAdjustments"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("2")]
+        public double AscomAutomatedAdjustmentSettleTime {
+            get {
+                return ((double)(this["AscomAutomatedAdjustmentSettleTime"]));
+            }
+            set {
+                this["AscomAutomatedAdjustmentSettleTime"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AscomReverseAzimuth {
+            get {
+                return ((bool)(this["AscomReverseAzimuth"]));
+            }
+            set {
+                this["AscomReverseAzimuth"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AscomReverseAltitude {
+            get {
+                return ((bool)(this["AscomReverseAltitude"]));
+            }
+            set {
+                this["AscomReverseAltitude"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public float AscomXBacklashCompensation {
+            get {
+                return ((float)(this["AscomXBacklashCompensation"]));
+            }
+            set {
+                this["AscomXBacklashCompensation"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public float AscomYBacklashCompensation {
+            get {
+                return ((float)(this["AscomYBacklashCompensation"]));
+            }
+            set {
+                this["AscomYBacklashCompensation"] = value;
+            }
+        }
     }
 }

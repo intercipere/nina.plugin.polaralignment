@@ -19,6 +19,7 @@
 - OAPA: Calibrate pressed just after a polar alignment stopped measuring waits at most 10 seconds for TPPA's next reading, then calibrates on the plugin's own frames instead of waiting for readings that do not come.
 - OAPA: the move cap goes up to what the controller allows, which it reports itself (180 arcminutes with firmware 1.3.2, 120 before). A move cap above 120 arcminutes is taken only after a confirmation.
 - OAPA: the panel shows the firmware version of the connected controller, next to the link.
+- New alignment system "ASCOM": a mount with its own azimuth/altitude adjusters (e.g. OpenAstroTracker AutoPA) is driven through its existing ASCOM/Alpaca connection, using the vendor-neutral PolarAlign actions (https://wiki.openastrotech.com/en/Development/pa-actions). No second port is needed; moves are in arcminutes, and TPPA's automated adjustments decide them as for UPAS.
 
 ## Version 2.2.6.7
 - Fixed UPAS azimuth backlash compensation.

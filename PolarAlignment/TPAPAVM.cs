@@ -61,6 +61,7 @@ namespace NINA.Plugins.PolarAlignment {
 
         public UniversalPolarAlignmentVM UniversalPolarAlignmentVM => PolarAlignmentPlugin.UniversalPolarAlignmentVM;
         public UniversalPolarAlignmentOAPAVM UniversalPolarAlignmentOAPAVM => PolarAlignmentPlugin.UniversalPolarAlignmentOAPAVM;
+        public Ascom.AscomPolarAlignmentVM AscomPolarAlignmentVM => PolarAlignmentPlugin.AscomPolarAlignmentVM;
         public IPolarAlignmentSystemVM ActiveAlignmentSystemVM => PolarAlignmentPlugin.ActiveAlignmentSystemVM;
         public bool UseContinuousErrorEstimator => Properties.Settings.Default.UseContinuousErrorEstimator;
 
